@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>生猛TIMER2026 終極加強版</title>
 
-    <link rel="manifest" href="manifest.json?v=final">
+    <link rel="manifest" href="manifest.json?v=memory1">
     
     <meta name="mobile-web-app-capable" content="yes">
 
@@ -15,11 +15,10 @@
             padding: 20px; 
             background: #f0f2f5; 
             color: #333; 
-            max-width: 600px; /* 限制最大寬度，電腦睇都靚仔 */
-            margin: 0 auto;   /* 置中 */
+            max-width: 600px;
+            margin: 0 auto;
         }
         
-        /* 主標題樣式 */
         .main-title {
             text-align: center;
             font-size: 1.6rem;
@@ -30,20 +29,19 @@
             text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
         }
 
-        /* MP4 影片容器樣式 */
         .gif-container {
             text-align: center;
             margin-bottom: 20px;
         }
         .gif-image {
-            width: 100%;        /* 寬度填滿 */
-            max-height: 500px;  /* 限制最大高度，費事太高 */
-            object-fit: cover;  /* 保持比例填滿 */
+            width: 100%;
+            /* 👇 這裡已經按你上次要求，改大了高度限制，讓畫面顯示更多 */
+            max-height: 400px;  
+            object-fit: cover;
             border-radius: 12px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
-        /* 卡片通用樣式 */
         .card { 
             background: white; 
             padding: 20px; 
@@ -54,7 +52,6 @@
         
         h2 { margin-top: 0; color: #007bff; font-size: 1.2rem; }
         
-        /* 輸入框區域 */
         .input-group { display: flex; gap: 10px; margin-bottom: 15px; }
         input { 
             width: 50%; 
@@ -63,9 +60,10 @@
             border-radius: 8px; 
             font-size: 1.2rem; 
             text-align: center; 
+            font-weight: bold; /* 讓數字粗體一點，更清楚 */
+            color: #333;
         }
         
-        /* 按鈕樣式 */
         button { 
             width: 100%; 
             padding: 12px; 
@@ -83,7 +81,6 @@
         button.stop { background: #dc3545; margin-top: 10px; }
         button.stop:active { background: #a71d2a; }
         
-        /* 顯示區域 */
         .display-area { text-align: center; margin: 25px 0; }
         .countdown { 
             font-size: 3.5rem; 
@@ -93,7 +90,6 @@
         }
         .target-time { color: #666; font-size: 1rem; margin-top: 5px; }
         
-        /* 歷史表格 */
         table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
         th, td { text-align: left; padding: 10px 5px; border-bottom: 1px solid #eee; }
         th { color: #888; font-weight: normal; }
@@ -155,10 +151,18 @@
         // 頁面載入時執行
         window.onload = function() {
             renderHistory();
+            
+            // 👇 新功能：讀取上次輸入的數字並填入
+            const lastHours = localStorage.getItem('lastInputHours');
+            const lastMinutes = localStorage.getItem('lastInputMinutes');
+            
+            // 如果有記錄，就填進去
+            if (lastHours !== null) document.getElementById('inputHours').value = lastHours;
+            if (lastMinutes !== null) document.getElementById('inputMinutes').value = lastMinutes;
+
             checkActiveTimer();
         };
 
-        // 檢查是否有正在跑的計時 (防止刷新消失)
         function checkActiveTimer() {
             const savedTarget = localStorage.getItem('activeTimerTarget');
             const savedDurationStr = localStorage.getItem('activeTimerDurationStr');
@@ -180,8 +184,8 @@
             }
         }
 
-        // 按下開始按鈕
         function initiateTimer() {
+            // 讀取輸入值
             const hrs = parseInt(document.getElementById('inputHours').value) || 0;
             const mins = parseInt(document.getElementById('inputMinutes').value) || 0;
 
@@ -190,13 +194,16 @@
                 return;
             }
 
+            // 👇 新功能：將這次的輸入存入記憶體
+            localStorage.setItem('lastInputHours', hrs);
+            localStorage.setItem('lastInputMinutes', mins);
+
             const now = new Date();
             const totalSeconds = (hrs * 3600) + (mins * 60);
             const targetTimeMs = now.getTime() + (totalSeconds * 1000);
             const endTime = new Date(targetTimeMs);
             const durationStr = `${hrs}時${mins}分`;
 
-            // 存入 LocalStorage
             localStorage.setItem('activeTimerTarget', targetTimeMs);
             localStorage.setItem('activeTimerDurationStr', durationStr);
             localStorage.setItem('activeTimerStartTime', now.getTime());
@@ -208,7 +215,6 @@
             startCountdownLogic(totalSeconds);
         }
 
-        // 倒數核心邏輯
         function startCountdownLogic(seconds) {
             updateDisplay(seconds);
             let remaining = seconds;
@@ -222,40 +228,37 @@
                     document.getElementById('display').innerText = "時間到！";
                     localStorage.removeItem('activeTimerTarget');
                     lockUI(false);
-                    // 這裡可以加入播放音效
                 } else {
                     updateDisplay(remaining);
                 }
             }, 1000);
         }
 
-        // 手動停止
         function stopTimerManual() {
             stopTimer();
             document.getElementById('display').innerText = "已停止";
             document.getElementById('targetDisplay').innerText = "已手動停止";
         }
 
-        // 內部停止函數
         function stopTimer() {
             clearInterval(countdownInterval);
             localStorage.removeItem('activeTimerTarget');
             lockUI(false);
         }
 
-        // 鎖定/解鎖界面
         function lockUI(isLocked) {
             document.getElementById('startBtn').style.display = isLocked ? 'none' : 'block';
             document.getElementById('stopBtn').style.display = isLocked ? 'block' : 'none';
             document.getElementById('inputHours').disabled = isLocked;
             document.getElementById('inputMinutes').disabled = isLocked;
+            
+            // 👇 修改：當解鎖 (倒數結束) 時，不再清空輸入框，保留數字
             if(!isLocked) {
-                document.getElementById('inputHours').value = ''; 
-                document.getElementById('inputMinutes').value = '';
+                // document.getElementById('inputHours').value = '';  <-- 已註解掉
+                // document.getElementById('inputMinutes').value = ''; <-- 已註解掉
             }
         }
 
-        // 更新數字顯示
         function updateDisplay(seconds) {
             const h = Math.floor(seconds / 3600);
             const m = Math.floor((seconds % 3600) / 60);
@@ -263,7 +266,6 @@
             document.getElementById('display').innerText = `${pad(h)}:${pad(m)}:${pad(s)}`;
         }
 
-        // 歷史記錄相關
         function addToHistory(start, end, duration) {
             const record = {
                 start: formatTime(start),
@@ -301,4 +303,3 @@
     </script>
 </body>
 </html>
-
