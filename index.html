@@ -4,45 +4,120 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>生猛TIMER2026 終極加強版</title>
+
+    <link rel="manifest" href="manifest.json?v=final">
     
-    <link rel="manifest" href="manifest.json?v=rename1">
     <meta name="mobile-web-app-capable" content="yes">
 
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #f0f2f5; color: #333; }
-        
-        /* 新增：主標題的樣式 */
-        .main-title {
-            text-align: center;
-            font-size: 1.8rem;
-            font-weight: bold;
-            color: #333; /* 深灰色，看起來專業點 */
-            margin-top: 10px;
-            margin-bottom: 25px;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.1); /* 加一點點陰影更有立體感 */
+        body { 
+            font-family: sans-serif; 
+            padding: 20px; 
+            background: #f0f2f5; 
+            color: #333; 
+            max-width: 600px; /* 限制最大寬度，電腦睇都靚仔 */
+            margin: 0 auto;   /* 置中 */
         }
         
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        /* 主標題樣式 */
+        .main-title {
+            text-align: center;
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: #333;
+            margin-top: 10px;
+            margin-bottom: 15px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        /* MP4 影片容器樣式 */
+        .gif-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .gif-image {
+            width: 100%;        /* 寬度填滿 */
+            max-height: 250px;  /* 限制最大高度，費事太高 */
+            object-fit: cover;  /* 保持比例填滿 */
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        /* 卡片通用樣式 */
+        .card { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 12px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+            margin-bottom: 20px; 
+        }
+        
         h2 { margin-top: 0; color: #007bff; font-size: 1.2rem; }
+        
+        /* 輸入框區域 */
         .input-group { display: flex; gap: 10px; margin-bottom: 15px; }
-        input { width: 50%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 1.1rem; text-align: center; }
-        button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 8px; font-size: 1.1rem; cursor: pointer; }
-        button:disabled { background: #ccc; }
+        input { 
+            width: 50%; 
+            padding: 12px; 
+            border: 1px solid #ccc; 
+            border-radius: 8px; 
+            font-size: 1.2rem; 
+            text-align: center; 
+        }
+        
+        /* 按鈕樣式 */
+        button { 
+            width: 100%; 
+            padding: 12px; 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            font-size: 1.1rem; 
+            font-weight: bold;
+            cursor: pointer; 
+            transition: background 0.2s;
+        }
+        button:active { background: #0056b3; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
         button.stop { background: #dc3545; margin-top: 10px; }
+        button.stop:active { background: #a71d2a; }
         
-        .display-area { text-align: center; margin: 20px 0; }
-        .countdown { font-size: 3rem; font-weight: bold; font-variant-numeric: tabular-nums; }
-        .target-time { color: #666; font-size: 0.9rem; margin-top: 5px; }
+        /* 顯示區域 */
+        .display-area { text-align: center; margin: 25px 0; }
+        .countdown { 
+            font-size: 3.5rem; 
+            font-weight: bold; 
+            font-variant-numeric: tabular-nums; 
+            color: #222;
+        }
+        .target-time { color: #666; font-size: 1rem; margin-top: 5px; }
         
-        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-        th, td { text-align: left; padding: 8px; border-bottom: 1px solid #eee; }
+        /* 歷史表格 */
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th, td { text-align: left; padding: 10px 5px; border-bottom: 1px solid #eee; }
         th { color: #888; font-weight: normal; }
-        .clear-btn { background: none; border: none; color: #dc3545; font-size: 0.8rem; padding: 0; width: auto; float: right; }
+        .clear-btn { 
+            background: none; 
+            border: 1px solid #dc3545; 
+            color: #dc3545; 
+            font-size: 0.8rem; 
+            padding: 4px 10px; 
+            width: auto; 
+            float: right; 
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
 
     <h1 class="main-title">🚀 生猛TIMER2026 終極加強版</h1>
+
+    <div class="gif-container">
+        <video class="gif-image" autoplay loop muted playsinline>
+            <source src="banner.mp4" type="video/mp4">
+        </video>
+    </div>
 
     <div class="card">
         <h2>⏱️ 倒數計時設定</h2>
@@ -60,7 +135,7 @@
     </div>
 
     <div class="card">
-        <h2>📋 歷史記錄 <button class="clear-btn" onclick="clearHistory()">清除</button></h2>
+        <h2>📋 歷史記錄 <button class="clear-btn" onclick="clearHistory()">清除記錄</button></h2>
         <table>
             <thead>
                 <tr>
@@ -74,22 +149,25 @@
     </div>
 
     <script>
-        // ... (這裡的 JavaScript 代碼完全不用動，保持原樣即可) ...
         let countdownInterval;
         const historyData = JSON.parse(localStorage.getItem('timerHistory')) || [];
 
+        // 頁面載入時執行
         window.onload = function() {
             renderHistory();
             checkActiveTimer();
         };
 
+        // 檢查是否有正在跑的計時 (防止刷新消失)
         function checkActiveTimer() {
             const savedTarget = localStorage.getItem('activeTimerTarget');
             const savedDurationStr = localStorage.getItem('activeTimerDurationStr');
+
             if (savedTarget) {
                 const now = new Date().getTime();
                 const targetTime = parseInt(savedTarget);
                 const remainingSeconds = Math.floor((targetTime - now) / 1000);
+
                 if (remainingSeconds > 0) {
                     lockUI(true);
                     document.getElementById('targetDisplay').innerText = `目標結束時間: ${formatTime(new Date(targetTime))}`;
@@ -102,28 +180,41 @@
             }
         }
 
+        // 按下開始按鈕
         function initiateTimer() {
             const hrs = parseInt(document.getElementById('inputHours').value) || 0;
             const mins = parseInt(document.getElementById('inputMinutes').value) || 0;
-            if (hrs === 0 && mins === 0) { alert("請輸入有效的時間！"); return; }
+
+            if (hrs === 0 && mins === 0) {
+                alert("請輸入有效的時間！");
+                return;
+            }
+
             const now = new Date();
             const totalSeconds = (hrs * 3600) + (mins * 60);
             const targetTimeMs = now.getTime() + (totalSeconds * 1000);
             const endTime = new Date(targetTimeMs);
             const durationStr = `${hrs}時${mins}分`;
+
+            // 存入 LocalStorage
             localStorage.setItem('activeTimerTarget', targetTimeMs);
             localStorage.setItem('activeTimerDurationStr', durationStr);
             localStorage.setItem('activeTimerStartTime', now.getTime());
+
             addToHistory(now, endTime, durationStr);
+
             document.getElementById('targetDisplay').innerText = `目標結束時間: ${formatTime(endTime)}`;
             lockUI(true);
             startCountdownLogic(totalSeconds);
         }
 
+        // 倒數核心邏輯
         function startCountdownLogic(seconds) {
             updateDisplay(seconds);
             let remaining = seconds;
+            
             if (countdownInterval) clearInterval(countdownInterval);
+
             countdownInterval = setInterval(() => {
                 remaining--;
                 if (remaining < 0) {
@@ -131,31 +222,40 @@
                     document.getElementById('display').innerText = "時間到！";
                     localStorage.removeItem('activeTimerTarget');
                     lockUI(false);
+                    // 這裡可以加入播放音效
                 } else {
                     updateDisplay(remaining);
                 }
             }, 1000);
         }
 
+        // 手動停止
         function stopTimerManual() {
             stopTimer();
             document.getElementById('display').innerText = "已停止";
             document.getElementById('targetDisplay').innerText = "已手動停止";
         }
 
+        // 內部停止函數
         function stopTimer() {
             clearInterval(countdownInterval);
             localStorage.removeItem('activeTimerTarget');
             lockUI(false);
         }
 
+        // 鎖定/解鎖界面
         function lockUI(isLocked) {
             document.getElementById('startBtn').style.display = isLocked ? 'none' : 'block';
             document.getElementById('stopBtn').style.display = isLocked ? 'block' : 'none';
             document.getElementById('inputHours').disabled = isLocked;
             document.getElementById('inputMinutes').disabled = isLocked;
+            if(!isLocked) {
+                document.getElementById('inputHours').value = ''; 
+                document.getElementById('inputMinutes').value = '';
+            }
         }
 
+        // 更新數字顯示
         function updateDisplay(seconds) {
             const h = Math.floor(seconds / 3600);
             const m = Math.floor((seconds % 3600) / 60);
@@ -163,8 +263,13 @@
             document.getElementById('display').innerText = `${pad(h)}:${pad(m)}:${pad(s)}`;
         }
 
+        // 歷史記錄相關
         function addToHistory(start, end, duration) {
-            const record = { start: formatTime(start), end: formatTime(end), duration: duration };
+            const record = {
+                start: formatTime(start),
+                end: formatTime(end),
+                duration: duration
+            };
             historyData.unshift(record);
             localStorage.setItem('timerHistory', JSON.stringify(historyData));
             renderHistory();
@@ -179,15 +284,20 @@
         }
 
         function clearHistory() {
-            if(confirm("確定要清除所有記錄嗎？")) {
+            if(confirm("確定要清除所有歷史記錄嗎？")) {
                 localStorage.removeItem('timerHistory');
                 historyData.length = 0;
                 renderHistory();
             }
         }
 
-        function formatTime(date) { return `${pad(date.getHours())}:${pad(date.getMinutes())}`; }
-        function pad(num) { return num.toString().padStart(2, '0'); }
+        function formatTime(date) {
+            return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+        }
+
+        function pad(num) {
+            return num.toString().padStart(2, '0');
+        }
     </script>
 </body>
 </html>
