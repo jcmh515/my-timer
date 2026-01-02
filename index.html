@@ -3,11 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>倒數計時工具</title>
-    <link rel="manifest" href="manifest.json">
+    <title>生猛TIMER2026 終極加強版</title>
+    
+    <link rel="manifest" href="manifest.json?v=rename1">
     <meta name="mobile-web-app-capable" content="yes">
+
     <style>
         body { font-family: sans-serif; padding: 20px; background: #f0f2f5; color: #333; }
+        
+        /* 新增：主標題的樣式 */
+        .main-title {
+            text-align: center;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #333; /* 深灰色，看起來專業點 */
+            margin-top: 10px;
+            margin-bottom: 25px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1); /* 加一點點陰影更有立體感 */
+        }
+        
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
         h2 { margin-top: 0; color: #007bff; font-size: 1.2rem; }
         .input-group { display: flex; gap: 10px; margin-bottom: 15px; }
@@ -27,6 +41,8 @@
     </style>
 </head>
 <body>
+
+    <h1 class="main-title">🚀 生猛TIMER2026 終極加強版</h1>
 
     <div class="card">
         <h2>⏱️ 倒數計時設定</h2>
@@ -58,35 +74,29 @@
     </div>
 
     <script>
+        // ... (這裡的 JavaScript 代碼完全不用動，保持原樣即可) ...
         let countdownInterval;
         const historyData = JSON.parse(localStorage.getItem('timerHistory')) || [];
 
-        // 頁面載入時執行
         window.onload = function() {
             renderHistory();
-            checkActiveTimer(); // 檢查是否有正在進行的倒數
+            checkActiveTimer();
         };
 
         function checkActiveTimer() {
             const savedTarget = localStorage.getItem('activeTimerTarget');
             const savedDurationStr = localStorage.getItem('activeTimerDurationStr');
-            const savedStartTime = localStorage.getItem('activeTimerStartTime');
-
             if (savedTarget) {
                 const now = new Date().getTime();
                 const targetTime = parseInt(savedTarget);
                 const remainingSeconds = Math.floor((targetTime - now) / 1000);
-
                 if (remainingSeconds > 0) {
-                    // 倒數還沒結束，繼續跑
                     lockUI(true);
                     document.getElementById('targetDisplay').innerText = `目標結束時間: ${formatTime(new Date(targetTime))}`;
                     startCountdownLogic(remainingSeconds);
                 } else {
-                    // 頁面關閉期間倒數已經結束了
                     lockUI(false);
                     document.getElementById('display').innerText = "時間到！";
-                    // 清除鎖定狀態但保留歷史記錄
                     localStorage.removeItem('activeTimerTarget');
                 }
             }
@@ -95,27 +105,16 @@
         function initiateTimer() {
             const hrs = parseInt(document.getElementById('inputHours').value) || 0;
             const mins = parseInt(document.getElementById('inputMinutes').value) || 0;
-
-            if (hrs === 0 && mins === 0) {
-                alert("請輸入有效的時間！");
-                return;
-            }
-
+            if (hrs === 0 && mins === 0) { alert("請輸入有效的時間！"); return; }
             const now = new Date();
             const totalSeconds = (hrs * 3600) + (mins * 60);
             const targetTimeMs = now.getTime() + (totalSeconds * 1000);
             const endTime = new Date(targetTimeMs);
             const durationStr = `${hrs}時${mins}分`;
-
-            // 1. 儲存狀態到 LocalStorage (關鍵步驟)
             localStorage.setItem('activeTimerTarget', targetTimeMs);
             localStorage.setItem('activeTimerDurationStr', durationStr);
             localStorage.setItem('activeTimerStartTime', now.getTime());
-
-            // 2. 寫入歷史記錄
             addToHistory(now, endTime, durationStr);
-
-            // 3. 更新 UI 與開始倒數
             document.getElementById('targetDisplay').innerText = `目標結束時間: ${formatTime(endTime)}`;
             lockUI(true);
             startCountdownLogic(totalSeconds);
@@ -124,18 +123,14 @@
         function startCountdownLogic(seconds) {
             updateDisplay(seconds);
             let remaining = seconds;
-            
-            // 清除舊的計時器以防萬一
             if (countdownInterval) clearInterval(countdownInterval);
-
             countdownInterval = setInterval(() => {
                 remaining--;
                 if (remaining < 0) {
                     clearInterval(countdownInterval);
                     document.getElementById('display').innerText = "時間到！";
-                    localStorage.removeItem('activeTimerTarget'); // 移除活躍狀態
-                    lockUI(false); // 解鎖按鈕
-                    // 這裡可以加入播放音效
+                    localStorage.removeItem('activeTimerTarget');
+                    lockUI(false);
                 } else {
                     updateDisplay(remaining);
                 }
@@ -143,14 +138,14 @@
         }
 
         function stopTimerManual() {
-            stopTimer(); // 停止計時
+            stopTimer();
             document.getElementById('display').innerText = "已停止";
             document.getElementById('targetDisplay').innerText = "已手動停止";
         }
 
         function stopTimer() {
             clearInterval(countdownInterval);
-            localStorage.removeItem('activeTimerTarget'); // 清除活躍狀態
+            localStorage.removeItem('activeTimerTarget');
             lockUI(false);
         }
 
@@ -159,10 +154,6 @@
             document.getElementById('stopBtn').style.display = isLocked ? 'block' : 'none';
             document.getElementById('inputHours').disabled = isLocked;
             document.getElementById('inputMinutes').disabled = isLocked;
-            if(!isLocked) {
-                // 如果需要重置輸入框可解開下面這行
-                // document.getElementById('inputHours').value = ''; 
-            }
         }
 
         function updateDisplay(seconds) {
@@ -173,11 +164,7 @@
         }
 
         function addToHistory(start, end, duration) {
-            const record = {
-                start: formatTime(start),
-                end: formatTime(end),
-                duration: duration
-            };
+            const record = { start: formatTime(start), end: formatTime(end), duration: duration };
             historyData.unshift(record);
             localStorage.setItem('timerHistory', JSON.stringify(historyData));
             renderHistory();
@@ -199,16 +186,8 @@
             }
         }
 
-        function formatTime(date) {
-            return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
-        }
-
-        function pad(num) {
-            return num.toString().padStart(2, '0');
-        }
+        function formatTime(date) { return `${pad(date.getHours())}:${pad(date.getMinutes())}`; }
+        function pad(num) { return num.toString().padStart(2, '0'); }
     </script>
 </body>
-
 </html>
-
-
