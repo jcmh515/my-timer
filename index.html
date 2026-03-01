@@ -100,7 +100,9 @@
             width: auto; 
             float: right; 
             border-radius: 4px;
+            cursor: pointer;
         }
+        .clear-btn:hover { background: #dc3545; color: white; }
     </style>
 </head>
 <body>
@@ -143,11 +145,10 @@
     </div>
 
     <script type="module">
-        // 1. 引入 Firebase 雲端模組
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+        import { getDatabase, ref, set, onValue, push, remove } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
-        // 2. 這是你的專屬資料庫鎖匙
+        // 你的專屬 Firebase 設定
         const firebaseConfig = {
             apiKey: "AIzaSyCpvWFN3JHzm-Zs9Ngk3uUTHL9uSybvlPE",
             authDomain: "timer2026-f0ae3.firebaseapp.com",
@@ -158,23 +159,24 @@
             appId: "1:33784124481:web:796e9d9c8fdbb9549c22c0"
         };
 
-        // 3. 啟動資料庫
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
-        const timerRef = ref(db, 'timerState'); // 在雲端開一個叫 timerState 的房間
+        
+        // 兩個雲端房間
+        const timerRef = ref(db, 'timerState'); 
+        const historyRef = ref(db, 'history');  
 
         let countdownInterval;
-        const historyData = JSON.parse(localStorage.getItem('timerHistory')) || [];
 
         window.onload = function() {
-            renderHistory();
+            // 讀取上次輸入的數字並填入
             const lastHours = localStorage.getItem('lastInputHours');
             const lastMinutes = localStorage.getItem('lastInputMinutes');
             if (lastHours !== null) document.getElementById('inputHours').value = lastHours;
             if (lastMinutes !== null) document.getElementById('inputMinutes').value = lastMinutes;
         };
 
-        // 💡 雲端監聽器：無時無刻望住雲端，一有變化就自動執行！
+        // 雲端監聽器 1：監聽計時器狀態
         onValue(timerRef, (snapshot) => {
             const data = snapshot.val();
             
@@ -205,7 +207,24 @@
             }
         });
 
-        // 按下「開始」按鈕
+        // 雲端監聽器 2：監聽歷史記錄
+        onValue(historyRef, (snapshot) => {
+            const data = snapshot.val();
+            const tbody = document.getElementById('historyList');
+            tbody.innerHTML = ''; 
+            
+            if (data) {
+                // 將物件轉換成陣列並反轉 (最新排最頂)
+                const records = Object.values(data).reverse();
+                
+                // 顯示最新 10 筆記錄
+                records.slice(0, 10).forEach(item => {
+                    tbody.innerHTML += `<tr><td>${item.start}</td><td>${item.end}</td><td>${item.duration}</td></tr>`;
+                });
+            }
+        });
+
+        // 開始倒數
         window.initiateTimer = function() {
             const hrs = parseInt(document.getElementById('inputHours').value) || 0;
             const mins = parseInt(document.getElementById('inputMinutes').value) || 0;
@@ -215,6 +234,7 @@
                 return;
             }
 
+            // 記錄上次輸入的時間到本地
             localStorage.setItem('lastInputHours', hrs);
             localStorage.setItem('lastInputMinutes', mins);
 
@@ -223,25 +243,25 @@
             const targetTimeMs = now.getTime() + (totalSeconds * 1000);
             const durationStr = `${hrs}時${mins}分`;
 
+            // 將新記錄推上雲端
             addToHistory(now, new Date(targetTimeMs), durationStr);
 
-            // 📤 將目標時間寫入雲端 (取代原本的 localStorage)
+            // 寫入雲端計時器房間
             set(timerRef, {
                 status: 'running',
                 targetTimeMs: targetTimeMs
             });
         };
 
-        // 按下「停止」按鈕
+        // 手動停止
         window.stopTimerManual = function() {
-            // 📤 告訴雲端：我要停止計時！
             set(timerRef, {
                 status: 'stopped',
                 targetTimeMs: 0
             });
         };
 
-        // 計算倒數並更新畫面
+        // 倒數邏輯
         function startCountdownLogic(targetTimeMs) {
             if (countdownInterval) clearInterval(countdownInterval);
 
@@ -258,7 +278,7 @@
                 }
             };
             
-            updateClock(); // 馬上執行一次避免延遲
+            updateClock();
             countdownInterval = setInterval(updateClock, 1000);
         }
 
@@ -266,6 +286,7 @@
             if (countdownInterval) clearInterval(countdownInterval);
         }
 
+        // 鎖定/解鎖介面
         function lockUI(isLocked) {
             document.getElementById('startBtn').style.display = isLocked ? 'none' : 'block';
             document.getElementById('stopBtn').style.display = isLocked ? 'block' : 'none';
@@ -280,33 +301,25 @@
             document.getElementById('display').innerText = `${pad(h)}:${pad(m)}:${pad(s)}`;
         }
 
+        // 將記錄加入雲端
         function addToHistory(start, end, duration) {
             const record = {
                 start: formatTime(start),
                 end: formatTime(end),
-                duration: duration
+                duration: duration,
+                timestamp: new Date().getTime() 
             };
-            historyData.unshift(record);
-            localStorage.setItem('timerHistory', JSON.stringify(historyData));
-            renderHistory();
+            push(historyRef, record);
         }
 
-        function renderHistory() {
-            const tbody = document.getElementById('historyList');
-            tbody.innerHTML = '';
-            historyData.forEach(item => {
-                tbody.innerHTML += `<tr><td>${item.start}</td><td>${item.end}</td><td>${item.duration}</td></tr>`;
-            });
-        }
-
+        // 清除雲端記錄
         window.clearHistory = function() {
-            if(confirm("確定要清除所有歷史記錄嗎？")) {
-                localStorage.removeItem('timerHistory');
-                historyData.length = 0;
-                renderHistory();
+            if(confirm("確定要清除所有歷史記錄嗎？此動作會同時清空所有裝置的記錄！")) {
+                remove(historyRef);
             }
         };
 
+        // 時間格式化工具
         function formatTime(date) {
             return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
         }
