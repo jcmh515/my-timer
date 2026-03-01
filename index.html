@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>生猛TIMER2026 終極加強版</title>
+    <title>生猛TIMER2026 雲端同步版 ☁️</title>
 
     <link rel="manifest" href="manifest.json?v=memory1">
-    
     <meta name="mobile-web-app-capable" content="yes">
 
     <style>
@@ -35,7 +34,6 @@
         }
         .gif-image {
             width: 100%;
-            /* 👇 這裡已經按你上次要求，改大了高度限制，讓畫面顯示更多 */
             max-height: 500px;  
             object-fit: cover;
             border-radius: 12px;
@@ -60,7 +58,7 @@
             border-radius: 8px; 
             font-size: 1.2rem; 
             text-align: center; 
-            font-weight: bold; /* 讓數字粗體一點，更清楚 */
+            font-weight: bold;
             color: #333;
         }
         
@@ -107,7 +105,7 @@
 </head>
 <body>
 
-    <h1 class="main-title">🚀 生猛TIMER2026 終極加強版</h1>
+    <h1 class="main-title">🚀 生猛TIMER2026 雲端同步版</h1>
 
     <div class="gif-container">
         <video class="gif-image" autoplay loop muted playsinline>
@@ -144,48 +142,71 @@
         </table>
     </div>
 
-    <script>
+    <script type="module">
+        // 1. 引入 Firebase 雲端模組
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+        // 2. 這是你的專屬資料庫鎖匙
+        const firebaseConfig = {
+            apiKey: "AIzaSyCpvWFN3JHzm-Zs9Ngk3uUTHL9uSybvlPE",
+            authDomain: "timer2026-f0ae3.firebaseapp.com",
+            databaseURL: "https://timer2026-f0ae3-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "timer2026-f0ae3",
+            storageBucket: "timer2026-f0ae3.firebasestorage.app",
+            messagingSenderId: "33784124481",
+            appId: "1:33784124481:web:796e9d9c8fdbb9549c22c0"
+        };
+
+        // 3. 啟動資料庫
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const timerRef = ref(db, 'timerState'); // 在雲端開一個叫 timerState 的房間
+
         let countdownInterval;
         const historyData = JSON.parse(localStorage.getItem('timerHistory')) || [];
 
-        // 頁面載入時執行
         window.onload = function() {
             renderHistory();
-            
-            // 👇 新功能：讀取上次輸入的數字並填入
             const lastHours = localStorage.getItem('lastInputHours');
             const lastMinutes = localStorage.getItem('lastInputMinutes');
-            
-            // 如果有記錄，就填進去
             if (lastHours !== null) document.getElementById('inputHours').value = lastHours;
             if (lastMinutes !== null) document.getElementById('inputMinutes').value = lastMinutes;
-
-            checkActiveTimer();
         };
 
-        function checkActiveTimer() {
-            const savedTarget = localStorage.getItem('activeTimerTarget');
-            const savedDurationStr = localStorage.getItem('activeTimerDurationStr');
-
-            if (savedTarget) {
+        // 💡 雲端監聽器：無時無刻望住雲端，一有變化就自動執行！
+        onValue(timerRef, (snapshot) => {
+            const data = snapshot.val();
+            
+            if (data && data.status === 'running') {
                 const now = new Date().getTime();
-                const targetTime = parseInt(savedTarget);
-                const remainingSeconds = Math.floor((targetTime - now) / 1000);
+                const remainingSeconds = Math.floor((data.targetTimeMs - now) / 1000);
 
                 if (remainingSeconds > 0) {
                     lockUI(true);
-                    document.getElementById('targetDisplay').innerText = `目標結束時間: ${formatTime(new Date(targetTime))}`;
-                    startCountdownLogic(remainingSeconds);
+                    document.getElementById('targetDisplay').innerText = `目標結束時間: ${formatTime(new Date(data.targetTimeMs))}`;
+                    startCountdownLogic(data.targetTimeMs);
                 } else {
                     lockUI(false);
                     document.getElementById('display').innerText = "時間到！";
-                    localStorage.removeItem('activeTimerTarget');
+                    document.getElementById('targetDisplay').innerText = "等待新任務...";
+                    stopTimerLocal();
                 }
+            } else if (data && data.status === 'stopped') {
+                lockUI(false);
+                document.getElementById('display').innerText = "已停止";
+                document.getElementById('targetDisplay').innerText = "已手動停止";
+                stopTimerLocal();
+            } else {
+                lockUI(false);
+                document.getElementById('display').innerText = "00:00:00";
+                document.getElementById('targetDisplay').innerText = "請輸入時間並開始";
+                stopTimerLocal();
             }
-        }
+        });
 
-        function initiateTimer() {
-            // 讀取輸入值
+        // 按下「開始」按鈕
+        window.initiateTimer = function() {
             const hrs = parseInt(document.getElementById('inputHours').value) || 0;
             const mins = parseInt(document.getElementById('inputMinutes').value) || 0;
 
@@ -194,56 +215,55 @@
                 return;
             }
 
-            // 👇 新功能：將這次的輸入存入記憶體
             localStorage.setItem('lastInputHours', hrs);
             localStorage.setItem('lastInputMinutes', mins);
 
             const now = new Date();
             const totalSeconds = (hrs * 3600) + (mins * 60);
             const targetTimeMs = now.getTime() + (totalSeconds * 1000);
-            const endTime = new Date(targetTimeMs);
             const durationStr = `${hrs}時${mins}分`;
 
-            localStorage.setItem('activeTimerTarget', targetTimeMs);
-            localStorage.setItem('activeTimerDurationStr', durationStr);
-            localStorage.setItem('activeTimerStartTime', now.getTime());
+            addToHistory(now, new Date(targetTimeMs), durationStr);
 
-            addToHistory(now, endTime, durationStr);
+            // 📤 將目標時間寫入雲端 (取代原本的 localStorage)
+            set(timerRef, {
+                status: 'running',
+                targetTimeMs: targetTimeMs
+            });
+        };
 
-            document.getElementById('targetDisplay').innerText = `目標結束時間: ${formatTime(endTime)}`;
-            lockUI(true);
-            startCountdownLogic(totalSeconds);
-        }
+        // 按下「停止」按鈕
+        window.stopTimerManual = function() {
+            // 📤 告訴雲端：我要停止計時！
+            set(timerRef, {
+                status: 'stopped',
+                targetTimeMs: 0
+            });
+        };
 
-        function startCountdownLogic(seconds) {
-            updateDisplay(seconds);
-            let remaining = seconds;
-            
+        // 計算倒數並更新畫面
+        function startCountdownLogic(targetTimeMs) {
             if (countdownInterval) clearInterval(countdownInterval);
 
-            countdownInterval = setInterval(() => {
-                remaining--;
-                if (remaining < 0) {
+            const updateClock = () => {
+                const now = new Date().getTime();
+                const remaining = Math.floor((targetTimeMs - now) / 1000);
+                
+                if (remaining <= 0) {
                     clearInterval(countdownInterval);
                     document.getElementById('display').innerText = "時間到！";
-                    localStorage.removeItem('activeTimerTarget');
                     lockUI(false);
                 } else {
                     updateDisplay(remaining);
                 }
-            }, 1000);
+            };
+            
+            updateClock(); // 馬上執行一次避免延遲
+            countdownInterval = setInterval(updateClock, 1000);
         }
 
-        function stopTimerManual() {
-            stopTimer();
-            document.getElementById('display').innerText = "已停止";
-            document.getElementById('targetDisplay').innerText = "已手動停止";
-        }
-
-        function stopTimer() {
-            clearInterval(countdownInterval);
-            localStorage.removeItem('activeTimerTarget');
-            lockUI(false);
+        function stopTimerLocal() {
+            if (countdownInterval) clearInterval(countdownInterval);
         }
 
         function lockUI(isLocked) {
@@ -251,12 +271,6 @@
             document.getElementById('stopBtn').style.display = isLocked ? 'block' : 'none';
             document.getElementById('inputHours').disabled = isLocked;
             document.getElementById('inputMinutes').disabled = isLocked;
-            
-            // 👇 修改：當解鎖 (倒數結束) 時，不再清空輸入框，保留數字
-            if(!isLocked) {
-                // document.getElementById('inputHours').value = '';  <-- 已註解掉
-                // document.getElementById('inputMinutes').value = ''; <-- 已註解掉
-            }
         }
 
         function updateDisplay(seconds) {
@@ -285,13 +299,13 @@
             });
         }
 
-        function clearHistory() {
+        window.clearHistory = function() {
             if(confirm("確定要清除所有歷史記錄嗎？")) {
                 localStorage.removeItem('timerHistory');
                 historyData.length = 0;
                 renderHistory();
             }
-        }
+        };
 
         function formatTime(date) {
             return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
@@ -303,4 +317,3 @@
     </script>
 </body>
 </html>
-
